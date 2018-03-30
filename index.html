@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+	<script type="text/javascript"
+			src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtq7ck8PQkFjSBryMsmpYpfFrVqVrnQ8s&libraries=places"></script>
+	<title>Place Finder-Info</title>
+</head>
+<body>
+	<div class="container">
+		<form id="location-form">
+			<input id="location-input" type="text" class="form-control form-control-lg" title="Enter location"
+				   placeholder="Enter location"><br>
+			<button type="submit" class="btn btn-primary btn-block">Submit</button>
+		</form>
+		<div id="formatted-address" class="card-block"></div>
+		<div id="address-components" class="card-block"></div>
+		<div id="geometry" class="card-block"></div>
+		<div id="map" style="height: 400px; width: 100%" class="card-block"></div>
+	</div>
+	
+	<script>
+		const mapDiv = document.getElementById("map"); mapDiv.hidden = true
+		const input = document.getElementById("location-input")
+		const options = {types: []}
+		let autocomplete = new google.maps.places.Autocomplete(input, options)
+		//get location form
+		const locationForm = document.getElementById("location-form")
+		//listen for submit
+		locationForm.addEventListener("submit", geocode)
+		function geocode(e) {
+			e.preventDefault()
+			const location = document.getElementById("location-input").value
+			axios.get("https://maps.googleapis.com/maps/api/geocode/json", {
+				params: {
+					address: location,
+					key: "AIzaSyBtq7ck8PQkFjSBryMsmpYpfFrVqVrnQ8s"
+				}
+			}).then(function(response) {
+				//log full response
+				console.log(response)
+				
+				//formatted address
+				const foramatted_address = response.data.results[0].formatted_address
+				const formattedAddressOutput = `
+					<ul class="list-group">
+						<li class="list-group-item">${foramatted_address}</li>
+					<ul>
+				`
+				//address components
+				const addressComponents = response.data.results[0].address_components
+				let addressComponentsOuput = "<ul class=\"list-group\">"
+				for (let i = 0; i < addressComponents.length; i ++) {
+					addressComponentsOuput+= `
+						<li class="list-group-item"><strong>${addressComponents[i].types[0]}</strong>: ${addressComponents[i].long_name}</li>
+					`
+				}
+				addressComponentsOuput += '</ul>'
+				//geometry
+				const lat = response.data.results[0].geometry.location.lat; latitude = lat
+				const lng = response.data.results[0].geometry.location.lng; longitude = lng
+				const geometryOutput = `
+					<ul class="list-group">
+						<li class="list-group-item"><strong>Latitude</strong>: ${lat}</li>
+						<li class="list-group-item"><strong>Longitude</strong>: ${lng}</li>
+					<ul>
+				`
+				//output to app
+				document.getElementById("formatted-address").innerHTML = formattedAddressOutput
+				document.getElementById("address-components").innerHTML = addressComponentsOuput
+				document.getElementById("geometry").innerHTML = geometryOutput
+				initMap()
+			}).catch(function(error) {
+				console.log(error)
+			})
+		}
+		let latitude; let longitude
+		function initMap() {
+			//map options
+			const options = {
+				zoom: 12,
+				center: {lat: latitude, lng: longitude}
+			}
+			//new map
+			mapDiv.hidden = false
+			const map = new google.maps.Map(mapDiv, options)
+			//new marker
+			const marker = new google.maps.Marker({
+				position: {lat: latitude, lng: longitude},
+				map: map
+			})
+		}
+	</script>
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtq7ck8PQkFjSBryMsmpYpfFrVqVrnQ8s"></script>
+</body>
+</html>
